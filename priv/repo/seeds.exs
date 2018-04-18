@@ -28,6 +28,21 @@ if Repo.all(Campaign) == [] do
     name: "admin",
     email: "admin@admin.com",
     active: true,
-    superadmin: true
-    } |> User.changeset(%{password: "admin1234"}))
+    superadmin: true,
+    id: 1
+  } |> User.changeset(%{password: "admin1234"}))
+
+  Repo.insert!(%User{
+    name: "nico",
+    email: "nico@aegee.org",
+    active: true,
+    id: 11
+  } |> User.changeset(%{password: "nico1234"}))
+
+  Repo.insert!(%User{
+    name: "sergey",
+    email: "sergey@aegee.org",
+    active: true,
+    id: 12
+  } |> User.changeset(%{password: "sergey1234"}))
 end

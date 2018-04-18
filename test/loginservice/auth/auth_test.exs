@@ -87,7 +87,8 @@ defmodule Loginservice.AuthTest do
 
     test "login user successfully" do
       user_fixture()
-      assert Loginservice.Auth.login_user("some name", "some password")
+      assert {:ok, _user, _access, _refresh} = Loginservice.Auth.login_user("some name", "some password")
+      assert {:ok, _user, _access, _refresh} = Loginservice.Auth.login_user("some@email.com", "some password")
     end
 
     test "refute bad credentials" do

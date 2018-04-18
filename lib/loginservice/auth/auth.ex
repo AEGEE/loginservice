@@ -120,7 +120,7 @@ defmodule Loginservice.Auth do
 
   # Fetch a user from DB
   def authenticate_user(username, plain_text_password) do
-    query = from u in User, where: u.name == ^username
+    query = from u in User, where: u.name == ^username or u.email == ^username
 
     with user <- Repo.one(query),
       {:ok, _user} <- check_password(user, plain_text_password),

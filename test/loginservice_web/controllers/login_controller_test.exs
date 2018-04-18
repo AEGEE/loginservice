@@ -27,7 +27,14 @@ defmodule LoginserviceWeb.LoginControllerTest do
     conn = post conn, login_path(conn, :login), username: "some name", password: "some password"
     assert json_response(conn, 200)["refresh_token"]
     assert json_response(conn, 200)["access_token"]
-    json_response(conn, 200)
+  end
+
+  test "user can also log in with his email instead of his username", %{conn: conn} do
+    user = user_fixture()
+
+    conn = post conn, login_path(conn, :login), username: user.email, password: "some password"
+    assert json_response(conn, 200)["refresh_token"]
+    assert json_response(conn, 200)["access_token"]
   end
 
   test "unsuccessful login returns an error", %{conn: conn} do
@@ -106,7 +113,6 @@ defmodule LoginserviceWeb.LoginControllerTest do
     assert json_response(conn, 200)
   end
 
-  @tag only: true
   test "user can change his name, email and password in case he provided a correct old password", %{conn: conn} do
     user = user_fixture()
 

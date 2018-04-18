@@ -58,6 +58,6 @@ config :loginservice, Loginservice.Repo,
   username: System.get_env("DB_USER") || "postgres",
   password: System.get_env("DB_PASSWORD") || "postgres",
   database: System.get_env("DB_DATABASE") || "loginservice_dev",
-  hostname: System.get_env("DB_HOSTNAME") || "postgres-loginservice",
+  hostname: System.get_env("DB_HOSTNAME") || "localhost",
   pool_size: 10
 
