@@ -15,10 +15,10 @@ config :logger, level: :warn
 # Configure your database
 config :loginservice, Loginservice.Repo,
   adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "loginservice_test",
-  hostname: "postgres-loginservice",
+  username: System.get_env("DB_USER") || "postgres",
+  password: System.get_env("DB_PASSWORD") || "postgres",
+  database: System.get_env("DB_DATABASE") || "loginservice_test",
+  hostname: System.get_env("DB_HOSTNAME") || "postgres-loginservice",
   pool: Ecto.Adapters.SQL.Sandbox
 
 # Speed up tests by reducing encryption rounds
