@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/blacksph3re/loginservice.svg?branch=master)](https://travis-ci.org/blacksph3re/loginservice)
+[![Build Status](https://travis-ci.org/AEGEE/oms-loginservice.svg?branch=master)](https://travis-ci.org/AEGEE/oms-loginservice)
 
 # Loginservice
 
