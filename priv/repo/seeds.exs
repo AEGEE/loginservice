@@ -26,7 +26,7 @@ if Repo.all(Campaign) == [] do
 
   Repo.insert!(%User{
     name: "admin",
-    email: "admin@admin.com",
+    email: "admin@aegee.org",
     active: true,
     superadmin: true,
     id: 1

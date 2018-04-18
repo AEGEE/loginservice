@@ -115,7 +115,7 @@ defmodule Loginservice.Auth do
 
   # Access tokens are shortlived and not saved in db, they are only cryptographically verified
   def create_access_token(user, refresh_token_db) do
-    Loginservice.Auth.Guardian.encode_and_sign(user, %{name: user.name, refresh: refresh_token_db.id}, token_type: "access", ttl: {Application.get_env(:loginservice, :ttl_access), :seconds})
+    Loginservice.Auth.Guardian.encode_and_sign(user, %{name: user.name, email: user.email, superadmin: user.superadmin, refresh: refresh_token_db.id}, token_type: "access", ttl: {Application.get_env(:loginservice, :ttl_access), :seconds})
   end
 
   # Fetch a user from DB

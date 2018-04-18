@@ -11,6 +11,8 @@ services:
             - oms-loginservice-postgres
         expose:
             - "4000"
+        ports:
+            - "4000:8084"
         labels:
             - "traefik.frontend.rule=HostRegexp:{domain:[a-z0-9.]+};PathPrefix:/services/oms-loginservice;PathPrefixStrip:/services/oms-loginservice"
             - "traefik.frontend.priority=100"
