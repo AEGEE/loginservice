@@ -17,6 +17,9 @@ config :loginservice, LoginserviceWeb.Endpoint,
 config :loginservice, Loginservice.Interfaces.Mail,
    mail_service: :sendgrid
 
+config :loginservice, Loginservice.Interfaces.MemberFetch,
+  member_data_provider: :query_core
+
 
 # ## SSL Support
 #

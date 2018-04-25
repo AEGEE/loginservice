@@ -39,7 +39,28 @@ defmodule LoginserviceWeb.LoginController do
   end
 
   def user_data(conn, _params) do
-    render(conn, "user.json", conn.assigns.user)
+    render(conn, "user.json", user: conn.assigns.user)
+  end
+
+  defp parse_core_members_response(data) do
+    data = data
+    |> Poison.decode
+
+    case data do
+      {:ok, %{"success" => true, "data" => %{"user_id" => user_id}}} -> {:ok, user_id}
+      {:ok, %{"success" => false, "message" => message}} -> {:error, message}
+      {:error, _} -> {:error, "Could not parse core response"}
+      _ -> {:error, "Unknown error while contacting core"}
+    end
+  end
+
+  # Requesting another users data requires you to have the permission to do that from the core
+  def user_data_foreign(conn, %{"member_id" => member_id}) do
+    with {:ok, data} <- Loginservice.Interfaces.MemberFetch.fetch_member(conn.assigns.access_token, member_id),
+         {:ok, user_id} <- parse_core_members_response(data),
+         user <- Auth.get_user!(user_id) do
+      render(conn, "user.json", user: user)
+    end
   end
 
   # With provided password the user can also edit his password
@@ -47,7 +68,7 @@ defmodule LoginserviceWeb.LoginController do
     user_params = Map.delete(user_params, "active")
     with {:ok, _} <- Auth.authenticate_user(conn.assigns.user.name, old_password), 
         {:ok, user} <- Auth.update_user(conn.assigns.user, user_params) do
-      render(conn, "user.json", user)      
+      render(conn, "user.json", user: user)      
     end
   end
 
@@ -57,7 +78,7 @@ defmodule LoginserviceWeb.LoginController do
     |> Map.delete("password")
     |> Map.delete("active")
     with {:ok, user} <- Auth.update_user(conn.assigns.user, user) do
-      render(conn, "user.json", user)
+      render(conn, "user.json", user: user)
     end
   end
 

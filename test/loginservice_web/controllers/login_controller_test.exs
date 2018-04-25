@@ -87,6 +87,135 @@ defmodule LoginserviceWeb.LoginControllerTest do
     assert json_response(conn, 200)
   end
 
+  test "user can view other member's user data if he has permissions to view the member in the core", %{conn: conn} do
+    user = user_fixture(%{name: "weird name", email: "weird@mail.com"})
+
+    core_response = "
+{
+  \"success\": true,
+  \"data\": {
+    \"user_id\": " <> to_string(user.id) <> ",
+    \"seo_url\": \"2393144\",
+    \"primary_body_id\": null,
+    \"primary_body\": null,
+    \"phone\": \"+1212345678\",
+    \"last_name\": \"Westerbeck\",
+    \"join_requests\": [],
+    \"id\": 1,
+    \"gender\": \"not specified\",
+    \"first_name\": \"Nico\",
+    \"date_of_birth\": \"2010-04-17\",
+    \"circles\": [
+      {
+        \"permissions\": null,
+        \"parent_circle_id\": 2,
+        \"parent_circle\": null,
+        \"name\": \"Board AEGEE-Dresden\",
+        \"joinable\": false,
+        \"id\": 1,
+        \"description\": \"basically doing nothing\",
+        \"child_circles\": null,
+        \"body_id\": 1,
+        \"body\": null
+      }
+    ],
+    \"circle_memberships\": [
+      {
+        \"position\": null,
+        \"member_id\": 1,
+        \"member\": null,
+        \"id\": 1,
+        \"circle_id\": 1,
+        \"circle_admin\": false,
+        \"circle\": {
+          \"permissions\": null,
+          \"parent_circle_id\": 2,
+          \"parent_circle\": null,
+          \"name\": \"Board AEGEE-Dresden\",
+          \"joinable\": false,
+          \"id\": 1,
+          \"description\": \"basically doing nothing\",
+          \"child_circles\": null,
+          \"body_id\": 1,
+          \"body\": null
+        }
+      }
+    ],
+    \"body_memberships\": [
+      {
+        \"member_id\": 1,
+        \"member\": null,
+        \"id\": 1,
+        \"body_id\": 1,
+        \"body\": {
+          \"phone\": \"don't call us\",
+          \"name\": \"AEGEE-Dresden\",
+          \"legacy_key\": \"DRE\",
+          \"id\": 1,
+          \"email\": \"info@aegee-dresden.org\",
+          \"description\": \"Very prehistoric antenna\",
+          \"circles\": null,
+          \"address\": \"Dresden\"
+        }
+      }
+    ],
+    \"bodies\": [
+      {
+        \"phone\": \"don't call us\",
+        \"name\": \"AEGEE-Dresden\",
+        \"legacy_key\": \"DRE\",
+        \"id\": 1,
+        \"email\": \"info@aegee-dresden.org\",
+        \"description\": \"Very prehistoric antenna\",
+        \"circles\": null,
+        \"address\": \"Dresden\"
+      }
+    ],
+    \"address\": \"Europe\",
+    \"about_me\": \"I code shit\"
+  }
+}"
+
+    :ets.insert(:core_fake_responses, {:member_fetch, core_response})
+
+    user2 = user_fixture()
+
+    conn = post conn, login_path(conn, :login), username: user2.name, password: "some password"
+    assert access = json_response(conn, 200)["access_token"]
+
+    conn = conn
+    |> recycle()
+    |> put_req_header("x-auth-token", access)
+
+    conn = get conn, login_path(conn, :user_data_foreign, 1)
+    assert data = json_response(conn, 200)["data"]
+    assert data["id"] == user.id
+  end
+
+  @tag only: 1
+  test "user can not view another users data if he has no access rights", %{conn: conn} do
+    core_response = "
+    {
+      \"success\": false,
+      \"message\": \"You have no permissions\"
+    }
+    "
+
+    :ets.insert(:core_fake_responses, {:member_fetch, core_response})
+
+    user2 = user_fixture()
+
+    conn = post conn, login_path(conn, :login), username: user2.name, password: "some password"
+    assert access = json_response(conn, 200)["access_token"]
+
+    conn = conn
+    |> recycle()
+    |> put_req_header("x-auth-token", access)
+
+    conn = get conn, login_path(conn, :user_data_foreign, 1)
+    assert json_response(conn, 400)
+  end
+
   test "user can change his name and email but not his password without providing the previous password", %{conn: conn} do
     user = user_fixture()
 

@@ -16,7 +16,7 @@ defmodule LoginserviceWeb.ErrorView do
 
   def render("error.json", %{msg: msg}) do
     %{success: false,
-      msg: msg}
+      message: msg}
   end
 
   def render("403.json", _assigns) do

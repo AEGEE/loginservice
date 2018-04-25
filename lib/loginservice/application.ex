@@ -9,6 +9,7 @@ defmodule Loginservice.Application do
     # If consoleout is our mail service, start a ets for testing purposes
     if Application.get_env(:loginservice, :env) == :test do
       :ets.new(:saved_mail, [:duplicate_bag, :public, :named_table])
+      :ets.new(:core_fake_responses, [:set, :public, :named_table])
     end
 
 

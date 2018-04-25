@@ -11,6 +11,7 @@ defmodule Loginservice.Plugs.Auth do
       conn 
       |> assign(:user, user)
       |> assign(:refresh_token_id, claims["refresh"])
+      |> assign(:access_token, token)
     else
       {:error, _msg} -> 
         conn

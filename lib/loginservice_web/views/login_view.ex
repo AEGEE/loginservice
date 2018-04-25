@@ -21,7 +21,8 @@ defmodule LoginserviceWeb.LoginView do
       name: user.name,
       email: user.email,
       inserted_at: user.inserted_at,
-      superadmin: user.superadmin
+      superadmin: user.superadmin,
+      active: user.active
     }
   end
 
