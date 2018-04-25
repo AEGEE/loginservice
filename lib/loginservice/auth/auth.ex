@@ -170,12 +170,10 @@ defmodule Loginservice.Auth do
     end
   end
 
-  defp send_password_reset_mail(user, url) do
-    url = Application.get_env(:loginservice, :url_prefix) <> "confirm_reset_password/" <> url
-    case Loginservice.Interfaces.Mail.send_mail(user.email, "Reset your password", "To reset your password, visit " <> url) do
-      true -> {:ok}
-      false -> {:error, "Could not dispatch mail"}
-    end
+  defp send_password_reset_mail(user, token) do
+    url = Application.get_env(:loginservice, :url_prefix) <> "password_reset?token=" <> token
+    Loginservice.Interfaces.Mail.send_mail(user.email, "Reset your password", 
+      "To reset your password, visit " <> url <> " or copy&paste this token into the input on the website: " <> token)
   end
 
   def get_password_reset_by_url!(reset_url) do
@@ -192,7 +190,9 @@ defmodule Loginservice.Auth do
     |> User.changeset(%{password: password})
     |> Repo.update()
 
-    Repo.delete!(password_reset)
+    if Kernel.elem(res, 0) == :ok do
+      Repo.delete!(password_reset)
+    end
 
     res
   end

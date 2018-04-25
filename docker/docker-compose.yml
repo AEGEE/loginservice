@@ -14,8 +14,8 @@ services:
         ports:
             - "4000:8084"
         labels:
-            - "traefik.frontend.rule=HostRegexp:{domain:[a-z0-9.]+};PathPrefix:/services/oms-loginservice;PathPrefixStrip:/services/oms-loginservice"
-            - "traefik.frontend.priority=100"
+            - "traefik.frontend.rule=HostRegexp:{domain:[a-z0-9.]+};PathPrefix:/services/oms-loginservice/api;PathPrefixStrip:/services/oms-loginservice"
+            - "traefik.frontend.priority=101"
             - "traefik.port=4000"
             - "traefik.backend=loginservice"
             - "traefik.enable=true"
@@ -40,6 +40,18 @@ services:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: postgres
 
+    oms-loginservice-nginx:
+        image: nginx:alpine
+        volumes:
+            - ./$PATH_OMS_LOGINSERVICE/../frontend/:/usr/share/nginx/html:ro
+        labels:
+            - "traefik.frontend.rule=HostRegexp:{domain:[a-z0-9.]+};PathPrefix:/services/oms-loginservice;PathPrefixStrip:/services/oms-loginservice"
+            - "traefik.frontend.priority=100"
+            - "traefik.port=80"
+            - "traefik.backend=oms-loginservice-frontend"
+            - "traefik.enable=true"
+            - "registry.status=status.json"
+            - "registry.modules=getModules.json"
 
 volumes:
     oms-loginservice-postgres:

@@ -251,6 +251,34 @@ defmodule LoginserviceWeb.LoginControllerTest do
 
   end
 
+  test "returns 422 on too short password", %{conn: conn} do
+    user = user_fixture()
+    :ets.delete_all_objects(:saved_mail)
+
+    conn = post conn, login_path(conn, :password_reset), email: user.email
+    assert json_response(conn, 200)
+
+    password_reset = Repo.get_by(Auth.PasswordReset, user_id: user.id)
+    assert password_reset != nil
+
+    url = :ets.lookup(:saved_mail, user.email)
+    |> assert
+    |> Enum.at(0)
+    |> parse_url_from_mail()
+
+    assert password_reset_new = Auth.get_password_reset_by_url!(url)
+    assert password_reset.id == password_reset_new.id
+    assert password_reset.url != url
+
+    conn = recycle(conn)
+
+    conn = post conn, login_path(conn, :confirm_password_reset, url), password: "np"
+    assert json_response(conn, 422)
+
+    conn = post conn, login_path(conn, :confirm_password_reset, url), password: "better, longer password"
+    assert json_response(conn, 200)
+  end
+
   test "cannot confirm passwort reset without a valid token", %{conn: conn} do
     user = user_fixture()
 
@@ -264,9 +292,9 @@ defmodule LoginserviceWeb.LoginControllerTest do
 
   defp parse_url_from_mail({_, _, content, _}) do
     # Parse the url token from a content which looks like this:
-    # To reset your password, visit www.alastair.com/registration/confirm_reset_password/vXMkHWvQETck73sjQpccFDgQQuavIoDZ
+    # To reset your password, visit www.alastair.com/registration/password_reset?token=vXMkHWvQETck73sjQpccFDgQQuavIoDZ
 
-    Application.get_env(:loginservice, :url_prefix) <> "confirm_reset_password/"
+    Application.get_env(:loginservice, :url_prefix) <> "password_reset?token="
     |> Regex.escape
     |> Kernel.<>("([^\s]*)")
     |> Regex.compile!

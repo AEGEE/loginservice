@@ -134,10 +134,7 @@ defmodule Loginservice.Registration do
 
   defp dispatch_confirmation_mail(user, url) do
     url = Application.get_env(:loginservice, :url_prefix) <> "confirm_mail/" <> url
-    case Loginservice.Interfaces.Mail.send_mail(user.email, "Confirm your email address", "To confirm your email, visit " <> url) do
-      true -> {:ok}
-      false -> {:error, "Could not dispatch mail"}
-    end
+    Loginservice.Interfaces.Mail.send_mail(user.email, "Confirm your email address", "To confirm your email, visit " <> url)
   end
 
   defp create_confirmation_object(submission) do

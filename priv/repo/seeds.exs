@@ -34,7 +34,7 @@ if Repo.all(Campaign) == [] do
 
   Repo.insert!(%User{
     name: "nico",
-    email: "nico@aegee.org",
+    email: "nico.westerbeck@aegee.eu",
     active: true,
     id: 11
   } |> User.changeset(%{password: "nico1234"}))

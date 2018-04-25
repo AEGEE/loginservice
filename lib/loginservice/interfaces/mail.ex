@@ -15,9 +15,13 @@ defmodule Loginservice.Interfaces.Mail do
         type: content_type,
         value: content
       }]
-    }
+    } 
 
-    HTTPoison.post("https://api.sendgrid.com/v3/mail/send", Poison.encode!(data) |> IO.inspect, [{"Authorization", "Bearer " <> Application.get_env(:loginservice, Loginservice.Interfaces.Mail)[:sendgrid_key]}, {"Content-Type", "application/json"}])
+    case HTTPoison.post("https://api.sendgrid.com/v3/mail/send", Poison.encode!(data), [{"Authorization", "Bearer " <> Application.get_env(:loginservice, Loginservice.Interfaces.Mail)[:sendgrid_key]}, {"Content-Type", "application/json"}]) do
+      {:ok, %HTTPoison.Response{status_code: 202}} -> {:ok}
+      {:ok, %HTTPoison.Response{status_code: 400}} -> {:error, "Could not send mail, sendgrid token might be malconfigured"}
+      _ -> {:error, "Could not send mail for unknown reason"}
+    end
   end
 
   def consoleout(to, subject, content, content_type) do
@@ -28,5 +32,6 @@ defmodule Loginservice.Interfaces.Mail do
 
     # Save in ets so test can query it
     :ets.insert(:saved_mail, {to, subject, content, content_type})
+    {:ok}
   end
 end

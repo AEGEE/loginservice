@@ -1,0 +1,9 @@
+{
+  "name": "OMS Loginservice",
+  "code": "oms-loginservice",
+  "menu_position": 200,
+  "pages": [],
+  "css": [],
+  "js": ["signup.js", "password_reset.js"],
+  "modules": ["public.password_reset", "public.signup"]
+}
