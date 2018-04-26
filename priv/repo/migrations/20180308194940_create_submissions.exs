@@ -6,8 +6,8 @@ defmodule Loginservice.Repo.Migrations.CreateSubmissions do
       add :responses, :string
       add :mail_confirmed, :boolean, default: false, null: false
 
-      add :user_id, references(:users, on_delete: :nothing)
-      add :campaign_id, references(:campaigns, on_delete: :nothing)
+      add :user_id, references(:users, on_delete: :delete_all)
+      add :campaign_id, references(:campaigns, on_delete: :nilify_all)
 
       timestamps()
     end

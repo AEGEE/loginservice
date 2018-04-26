@@ -35,7 +35,35 @@ defmodule Loginservice.ExpireTokens do
     query = from u in Loginservice.Registration.MailConfirmation,
       where: u.inserted_at < ^expiry
 
-    Loginservice.Repo.delete_all(query)
+    # Try to delete as many member objects as possible, save the fails
+    {deletes, fails} = query 
+    |> Loginservice.Repo.all()
+    |> Enum.map(fn(x) -> Loginservice.Repo.preload(x, [submission: [:user]]) end)
+    |> Enum.map(fn(x) ->
+      member_deletion = if x.submission.user.member_id do
+        Loginservice.Interfaces.MemberFetch.delete_member(x.submission.user.member_id)
+      else
+        {:ok}
+      end
+
+      {x, member_deletion}
+    end)
+    |> Enum.split_with(fn({_, res}) -> res == {:ok} end)
+    
+    # Deleting the user object will cascade through to submission and mail_confirmation
+    deletes = deletes
+    |> Enum.map(fn({x, _}) -> 
+      Loginservice.Repo.delete(x.submission.user)
+    end)
+
+    # Output the fails to command line hoping someone will see it
+    fails = fails
+    |> Enum.map(fn({x, res}) -> 
+      IO.inspect("Could not delete member " <> to_string(x.submission.user.member_id) <> " from core, core responded") 
+      IO.inspect(res)
+    end)
+
+    {deletes, fails}
   end
 
   def expire_password_resets() do

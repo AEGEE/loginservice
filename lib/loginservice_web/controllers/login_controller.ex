@@ -97,4 +97,28 @@ defmodule LoginserviceWeb.LoginController do
       render(conn, "success.json")     
     end
   end
+
+  defp check_superadmin(user, true) do
+    if user.superadmin do
+      {:ok}
+    else
+      {:forbidden, "Only superadmins can delete other users"}
+    end
+  end
+  defp check_superadmin(user, false) do
+    if user.superadmin do
+      {:forbidden, "You can not delete other superadmins"}
+    else
+      {:ok}
+    end
+  end
+
+  def delete_user(conn, %{"member_id" => member_id}) do
+    user = Auth.get_user_by_member_id!(member_id)
+    with {:ok} <- check_superadmin(conn.assigns.user, true),
+         {:ok} <- check_superadmin(user, false),
+         {:ok, _} <- Auth.delete_user(user) do
+      send_resp(conn, :no_content, "")
+    end
+  end
 end

@@ -13,6 +13,10 @@ defmodule LoginserviceWeb.CampaignControllerTest do
   @valid_user_attrs %{email: "some@email.com", name: "some name", password: "some password", active: true}
   @valid_submission %{name: "some new username", password: "some new password", email: "some@email.com", responses: nil}
   @invalid_submission %{name: nil, password: nil, email: nil, responses: nil}
+  @core_create_successful {:ok, %{"user_id" => 1, "id" => 1}}
+  @core_create_unsuccessful {:unprocessable_entity, %{"errors" => %{"last_name" => "required"}}}
+  @core_delete_successful {:ok}
+  @core_delete_unsuccessful {:not_found, "message"}
 
   def fixture(:campaign) do
     {:ok, campaign} = Registration.create_campaign(@create_attrs)
@@ -165,17 +169,48 @@ defmodule LoginserviceWeb.CampaignControllerTest do
   describe "submit signup" do
     setup [:create_campaign]
 
-    test "a valid submission returns successful status code", %{conn: conn, campaign: campaign} do 
+    test "a valid submission returns successful status code", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_successful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_successful})
+
       conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @valid_submission
       assert json_response(conn, 201)
+
+      assert user = Auth.get_user_by_email!(@valid_submission.email)
+      assert user.name == @valid_submission.name
+    end
+
+    test "a valid submission stores the member_id alongside the user", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_successful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_successful})
+
+      conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @valid_submission
+      assert json_response(conn, 201)
+
+      assert user = Auth.get_user_by_email!(@valid_submission.email)
+      assert user.member_id == 1
     end
 
     test "a invalid submission returns an error", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_successful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_successful})
+
       conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @invalid_submission
       assert json_response(conn, 422)["errors"] != %{}
     end
 
+    test "invalid member data is passed on to the user", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_unsuccessful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_unsuccessful})
+
+      conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @valid_submission
+      assert json_response(conn, 422)["errors"]["last_name"] == "required"
+    end
+
     test "a valid submission creates a user object, a submission and a mail confirmation in db", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_successful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_successful})
+
       conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @valid_submission
       assert json_response(conn, 201)
       
@@ -192,14 +227,20 @@ defmodule LoginserviceWeb.CampaignControllerTest do
     end
 
     test "a valid submission sends a confirmation mail to the user", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_successful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_successful})
       :ets.delete_all_objects(:saved_mail)
+
       conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @valid_submission
       assert json_response(conn, 201)
       assert :ets.lookup(:saved_mail, @valid_submission.email) != []
     end
     
     test "a confirmation mail contains a link over which the user can activate it's account", %{conn: conn, campaign: campaign} do
+      :ets.insert(:core_fake_responses, {:member_create, @core_create_successful})
+      :ets.insert(:core_fake_responses, {:member_delete, @core_delete_successful})
       :ets.delete_all_objects(:saved_mail)
+
       conn = post conn, campaign_path(conn, :submit, campaign.url), submission: @valid_submission
       assert json_response(conn, 201)
       
@@ -247,9 +288,9 @@ defmodule LoginserviceWeb.CampaignControllerTest do
 
   defp parse_url_from_mail({_, _, content, _}) do
     # Parse the url token from a content which looks like this:
-    # To confirm your email, visit www.alastair.com/registration/confirm_mail/vXMkHWvQETck73sjQpccFDgQQuavIoDZ
+    # To confirm your email, visit www.alastair.com/registration/signup?token=vXMkHWvQETck73sjQpccFDgQQuavIoDZ
 
-    Application.get_env(:loginservice, :url_prefix) <> "confirm_mail/"
+    Application.get_env(:loginservice, :url_prefix) <> "/signup?token="
     |> Regex.escape
     |> Kernel.<>("([^\s]*)")
     |> Regex.compile!

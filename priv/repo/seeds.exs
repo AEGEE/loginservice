@@ -32,17 +32,9 @@ if Repo.all(Campaign) == [] do
     id: 1
   } |> User.changeset(%{password: "admin1234"}))
 
-  Repo.insert!(%User{
-    name: "nico",
-    email: "nico.westerbeck@aegee.eu",
-    active: true,
-    id: 11
-  } |> User.changeset(%{password: "nico1234"}))
 
-  Repo.insert!(%User{
-    name: "sergey",
-    email: "sergey@aegee.org",
-    active: true,
-    id: 12
-  } |> User.changeset(%{password: "sergey1234"}))
+  # By manually using ids we need to update the primary key sequence to not run into random errors later on
+  qry = "SELECT setval('users_id_seq', (SELECT MAX(id) from \"users\"));"
+  Ecto.Adapters.SQL.query!(Repo, qry, [])
+
 end

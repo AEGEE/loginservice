@@ -17,6 +17,11 @@ defmodule Loginservice.Auth do
   def get_user!(id), do: Repo.get!(User, id)
 
   def get_user_by_email!(email), do: Repo.get_by!(User, email: email)
+  def get_user_by_member_id!(member_id) when is_binary(member_id) do
+    {member_id, ""} = Integer.parse(member_id)
+    get_user_by_member_id!(member_id)
+  end
+  def get_user_by_member_id!(member_id) when is_integer(member_id), do: Repo.get_by!(User, member_id: member_id)
 
   def create_user(attrs \\ %{}) do
     %User{}
@@ -27,6 +32,26 @@ defmodule Loginservice.Auth do
   def update_user(%User{} = user, attrs) do
     user
     |> User.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def update_user_member_id(%User{} = user, member_id) when is_binary(member_id) do
+    with {member_id, ""} <- Integer.parse(member_id) do
+      update_user_member_id(user, member_id)
+    end
+  end
+
+  def update_user_member_id(%User{} = user, member_id) when is_integer(member_id) do
+    user
+    |> User.changeset(%{})
+    |> Ecto.Changeset.put_change(:member_id, member_id)
+    |> Repo.update()
+  end
+
+  def update_user_superadmin(%User{} = user, superadmin) when is_boolean(superadmin) do
+    user
+    |> User.changeset(%{})
+    |> Ecto.Changeset.put_change(:superadmin, superadmin)
     |> Repo.update()
   end
 
@@ -171,7 +196,7 @@ defmodule Loginservice.Auth do
   end
 
   defp send_password_reset_mail(user, token) do
-    url = Application.get_env(:loginservice, :url_prefix) <> "password_reset?token=" <> token
+    url = Application.get_env(:loginservice, :url_prefix) <> "/password_reset?token=" <> token
     Loginservice.Interfaces.Mail.send_mail(user.email, "Reset your password", 
       "To reset your password, visit " <> url <> " or copy&paste this token into the input on the website: " <> token)
   end

@@ -18,7 +18,9 @@ config :loginservice, Loginservice.Interfaces.Mail,
    mail_service: :sendgrid
 
 config :loginservice, Loginservice.Interfaces.MemberFetch,
-  member_data_provider: :query_core
+  member_data_provider: :fetch_from_core,
+  member_delete_provider: :delete_from_core,
+  member_create_provider: :create_from_core
 
 
 # ## SSL Support

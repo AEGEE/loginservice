@@ -32,3 +32,11 @@ x Read secrets from file
 x Document API
 x Don't seed when already seeded
 x Superadmin field
+
+Core integration
+
+x Store member_id alongside with user object
+x Save member_id after member creation
+o Implement rescue after failed sending of confirmation email (optional, alternatively just wait for expiration of token and let expiration worker do cleanup then)
+x On deletion of a confirmation token also delete the user and member object
+o Delete member request

@@ -30,6 +30,11 @@ defmodule Loginservice.AuthTest do
       assert Auth.get_user!(user.id) == user
     end
 
+    test "get_user_by_member_id!/1 returns the user with the given member_id" do
+      user_fixture() |> Auth.update_user_member_id(123)
+      assert Auth.get_user_by_member_id!("123")
+    end
+
     test "create_user/1 with valid data creates a user" do
       assert {:ok, %User{} = user} = Auth.create_user(@valid_attrs)
       assert user.email == "some@email.com"
@@ -68,10 +73,36 @@ defmodule Loginservice.AuthTest do
       assert Loginservice.Auth.authenticate_user(user.name, "some updated password")
     end
 
+    test "update_user/2 doesn't update the member_id and superadmin status" do
+      user = user_fixture()
+      assert {:ok, user} = Auth.update_user(user, @update_attrs |> Map.put(:member_id, 1231249123) |> Map.put(:superadmin, true))
+      assert %User{} = user
+      assert user.member_id != 1231249123
+      assert user.superadmin == false
+    end
+
     test "update_user/2 with invalid data returns error changeset" do
       user = user_fixture()
       assert {:error, %Ecto.Changeset{}} = Auth.update_user(user, @invalid_attrs)
       assert user == Auth.get_user!(user.id)
+    end
+
+    test "update_user_member_id/2 updates a users member_id" do
+      user = user_fixture()
+      assert {:ok, user} = Auth.update_user_member_id(user, "1234567")
+      assert user == Auth.get_user!(user.id)
+      assert user.member_id == 1234567
+    end
+
+    test "update_user_superadmin/2 updates a users superadmin status" do
+      user = user_fixture()
+      assert {:ok, user} = Auth.update_user_superadmin(user, true)
+      assert user == Auth.get_user!(user.id)
+      assert user.superadmin == true
+
+      assert {:ok, user} = Auth.update_user_superadmin(user, false)
+      assert user == Auth.get_user!(user.id)
+      assert user.superadmin == false
     end
 
     test "delete_user/1 deletes the user" do
@@ -104,7 +135,6 @@ defmodule Loginservice.AuthTest do
       assert {:ok, _user, _claims} = Loginservice.Auth.check_refresh_token(refresh)
     end
 
-    @tag only: true
     test "logout with access token provided invalidates that access token" do
       user_fixture()
       assert {:ok, _user, _access, refresh} = Loginservice.Auth.login_user("some name", "some password")

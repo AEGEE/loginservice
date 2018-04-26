@@ -40,6 +40,7 @@ defmodule LoginserviceWeb.Router do
     get "/user", LoginController, :user_data
     put "/user", LoginController, :edit_user
     get "/user/:member_id", LoginController, :user_data_foreign
+    delete "/user/:member_id", LoginController, :delete_user
     post "/logout", LoginController, :logout
     post "/logout/all", LoginController, :logout_all
 

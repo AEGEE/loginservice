@@ -132,9 +132,10 @@ defmodule Loginservice.Registration do
     do: {:ok, confirmation}
   end
 
-  defp dispatch_confirmation_mail(user, url) do
-    url = Application.get_env(:loginservice, :url_prefix) <> "confirm_mail/" <> url
-    Loginservice.Interfaces.Mail.send_mail(user.email, "Confirm your email address", "To confirm your email, visit " <> url)
+  defp dispatch_confirmation_mail(user, token) do
+    url = Application.get_env(:loginservice, :url_prefix) <> "/signup?token=" <> token
+    Loginservice.Interfaces.Mail.send_mail(user.email, "Confirm your email address", 
+      "To confirm your email, visit " <> url <> " or copy&paste the token into the form on the website: " <> token)
   end
 
   defp create_confirmation_object(submission) do

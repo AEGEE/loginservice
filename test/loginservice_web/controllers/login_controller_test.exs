@@ -192,7 +192,7 @@ defmodule LoginserviceWeb.LoginControllerTest do
     assert data["id"] == user.id
   end
 
-  @tag only: 1
+  
   test "user can not view another users data if he has no access rights", %{conn: conn} do
     core_response = "
     {
@@ -419,11 +419,73 @@ defmodule LoginserviceWeb.LoginControllerTest do
     assert json_response(conn, 400)
   end
 
+  test "superadmin can delete users", %{conn: conn} do
+    user_fixture(%{name: "admin1", password: "admin1234", email: "admin1@admin.com"})
+    |> Auth.update_user_superadmin(true)
+
+    user = user_fixture()
+    |> Auth.update_user_member_id(2)
+    |> Kernel.elem(1)
+
+    conn = post conn, login_path(conn, :login), username: "admin1", password: "admin1234"
+    assert access = json_response(conn, 200)["access_token"]
+
+    conn = conn
+    |> recycle()
+    |> put_req_header("x-auth-token", access)
+
+    conn = delete conn, login_path(conn, :delete_user, 2)
+    assert response(conn, 204)
+
+    assert_raise Ecto.NoResultsError, fn -> Auth.get_user!(user.id) end
+  end
+
+  test "non-superadmins are rejected user deletion", %{conn: conn} do
+    user_fixture(%{superadmin: false, name: "admin1", password: "admin1234", email: "admin1@admin.com"})
+    user = user_fixture()
+    |> Auth.update_user_member_id(2)
+    |> Kernel.elem(1)
+
+    conn = post conn, login_path(conn, :login), username: "admin1", password: "admin1234"
+    assert access = json_response(conn, 200)["access_token"]
+
+    conn = conn
+    |> recycle()
+    |> put_req_header("x-auth-token", access)
+
+    conn = delete conn, login_path(conn, :delete_user, 2)
+    assert json_response(conn, 403)
+    assert Auth.get_user!(user.id)
+  end
+
+  test "can not delete another superadmin", %{conn: conn} do
+    user_fixture(%{name: "admin1", password: "admin1234", email: "admin1@admin.com"})
+    |> Auth.update_user_superadmin(true)
+
+    user = user_fixture()
+    |> Auth.update_user_member_id(2)
+    |> Kernel.elem(1)
+    |> Auth.update_user_superadmin(true)
+    |> Kernel.elem(1)
+
+    conn = post conn, login_path(conn, :login), username: "admin1", password: "admin1234"
+    assert access = json_response(conn, 200)["access_token"]
+
+    conn = conn
+    |> recycle()
+    |> put_req_header("x-auth-token", access)
+
+    conn = delete conn, login_path(conn, :delete_user, 2)
+    assert json_response(conn, 403)
+
+    assert Auth.get_user!(user.id)
+  end
+
   defp parse_url_from_mail({_, _, content, _}) do
     # Parse the url token from a content which looks like this:
     # To reset your password, visit www.alastair.com/registration/password_reset?token=vXMkHWvQETck73sjQpccFDgQQuavIoDZ
 
-    Application.get_env(:loginservice, :url_prefix) <> "password_reset?token="
+    Application.get_env(:loginservice, :url_prefix) <> "/password_reset?token="
     |> Regex.escape
     |> Kernel.<>("([^\s]*)")
     |> Regex.compile!

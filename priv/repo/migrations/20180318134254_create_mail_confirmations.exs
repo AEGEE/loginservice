@@ -4,7 +4,7 @@ defmodule Loginservice.Repo.Migrations.CreateMailConfirmations do
   def change do
     create table(:mail_confirmations) do
       add :url, :string
-      add :submission_id, references(:submissions, on_delete: :nothing)
+      add :submission_id, references(:submissions, on_delete: :delete_all)
 
       timestamps()
     end

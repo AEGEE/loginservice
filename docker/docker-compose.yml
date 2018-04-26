@@ -26,6 +26,7 @@ services:
             JWT_SECRET_KEY_FILE: /run/secrets/jwt_key
             SENDGRID_KEY_FILE: /run/secrets/sendgrid_key
             DB_HOSTNAME: oms-loginservice-postgres
+            BASE_URL: $BASE_URL
         secrets:
             - jwt_key
             - sendgrid_key

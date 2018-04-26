@@ -20,7 +20,7 @@ end
 config :loginservice,
   ecto_repos: [Loginservice.Repo],
   env: Mix.env,
-  url_prefix: "www.alastair.com/registration/",
+  url_prefix: System.get_env("BASE_URL") || "www.alastair.com/registration",
   ttl_refresh: 60 * 60 * 24 * 7 * 2,  # 2 weeks
   ttl_access: 60 * 60,                # 1 hour
   ttl_password_reset: 60 * 15,        # 15 Minutes
@@ -46,7 +46,10 @@ config :loginservice, Loginservice.Interfaces.UserActivationAction,
   action_provider: :do_nothing
 
 config :loginservice, Loginservice.Interfaces.MemberFetch,
-  member_data_provider: :test_response
+  member_data_provider: :test_fetch,
+  member_delete_provider: :test_delete,
+  member_create_provider: :test_create,
+  core_url: "http://oms-core-elixir:4000"
 
 config :loginservice, Loginservice.Auth.Guardian,
   issuer: System.get_env("JWT_ISSUER") || "Alastair", 

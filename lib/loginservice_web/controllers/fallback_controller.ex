@@ -29,4 +29,10 @@ defmodule LoginserviceWeb.FallbackController do
     |> put_status(:forbidden)
     |> render(LoginserviceWeb.ErrorView, "error.json", msg: msg)
   end
+
+  def call(conn, {:unprocessable_entity, %{errors: errors}}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> render(LoginserviceWeb.ErrorView, "error.json", errors: errors)
+  end
 end

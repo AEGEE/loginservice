@@ -4,7 +4,7 @@ defmodule Loginservice.Repo.Migrations.CreatePasswordResets do
   def change do
     create table(:password_resets) do
       add :url, :string
-      add :user_id, references(:users, on_delete: :nothing)
+      add :user_id, references(:users, on_delete: :delete_all)
 
       timestamps()
     end

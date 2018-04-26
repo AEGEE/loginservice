@@ -52,14 +52,33 @@ defmodule LoginserviceWeb.CampaignController do
   # Submit a new user registration
   def submit(conn, %{"campaign_url" => campaign_url, "submission" => submission_params}) do
     campaign = Registration.get_campaign_by_url!(campaign_url)
-    with {:ok, user} <- Loginservice.Auth.create_user(%{email: submission_params["email"], name: submission_params["name"], password: submission_params["password"]}),
-         {:ok, submission} <- Registration.create_submission(campaign, user, submission_params["responses"]),
+
+    # Creation of user, submission and member are wrapped in a transaction, so everything is rolled back upon failure
+    trans_res = Loginservice.Repo.transaction(fn -> 
+      member = %{first_name: submission_params["first_name"], last_name: submission_params["last_name"]}
+      with {:ok, user} <- Loginservice.Auth.create_user(%{email: submission_params["email"], name: submission_params["name"], password: submission_params["password"]}),
+           {:ok, submission} <- Registration.create_submission(campaign, user, submission_params["responses"]),
+           {:ok, member} <- Loginservice.Interfaces.MemberFetch.create_member(member |> Map.put(:user_id, user.id)),
+           {:ok, user} <- Loginservice.Auth.update_user_member_id(user, member["id"]) do
+        {:ok, user, submission}
+      else
+        error -> Loginservice.Repo.rollback(error)
+      end
+    end)
+
+    # The mail send confirmation is not part of the transaction. 
+    # In case sending the mail fails, the token will expire and the garbage collection worker will clean up the submission, user and memberobject.
+    # In this time it won't be possible to log in using the same username
+    with {:ok, {:ok, user, submission}} <- trans_res,
          {:ok, _data} <- Registration.send_confirmation_mail(user, submission) do
       conn
       |> put_status(:created)
       |> render("success.json")
+    else
+      {:error, {:unprocessable_entity, %{"errors" => errors}}} -> {:unprocessable_entity, %{errors: errors}}
+      {:error, {status, errors}} -> {status, errors}
+      mail_failure -> mail_failure
     end
-    # TODO remove created user or submission in case the submission failed later in the pipeline
   end
 
   # Confirm a users mail because he clicked the right link

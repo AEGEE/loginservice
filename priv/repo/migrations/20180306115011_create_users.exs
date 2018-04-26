@@ -8,6 +8,7 @@ defmodule Loginservice.Repo.Migrations.CreateUsers do
       add :password, :string
       add :active, :boolean, default: false, null: false
       add :superadmin, :boolean, default: false, null: false
+      add :member_id, :integer, default: nil
 
       timestamps()
     end
